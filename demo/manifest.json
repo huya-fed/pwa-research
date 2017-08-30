@@ -1,0 +1,18 @@
+{
+    "short_name": "虎牙",
+    "name": "虎牙直播",
+    "icons": [
+        {
+            "src": "img/icon_69.png",
+            "sizes": "69x69",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "index.html",
+    "display": "standalone",
+    "lang": "zh-CN",
+    "orientation": "portrait-primary",
+    "background_color": "#ffc900",
+    "theme_color": "#ffc900",
+    "prefer_related_applications": true
+}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<meta name="format-detection" content="telephone=no" />
+	<title>SERVICE WORKER DEMO</title>
+	<script>
+      //动态算rem
+      (function(doc, win) {
+          var docEl = doc.documentElement,
+              resizeEvt = 'orientationchange' in window ? 'orientationchange' : 'resize',
+              recalc = function() {
+                  // if (docEl.style.fontSize) return;
+                  clientWidth = docEl.clientWidth;
+                  if (!clientWidth) return;
+                  docEl.style.fontSize = 20 * (clientWidth / 320) + 'px';
+                  if (document.body) {
+                      document.body.style.fontSize = docEl.style.fontSize;
+                  }
+              };
+          recalc();
+          if (!doc.addEventListener) return;
+          win.addEventListener(resizeEvt, recalc, false);
+          doc.addEventListener('DOMContentLoaded', recalc, false);
+      })(document, window);
+    </script>
+	<link rel="stylesheet" href="css/index.css?t=1">
+	<link rel="stylesheet" href="css/widget.css?t=1">
+	<link rel="manifest" href="manifest.json">
+</head>
+<body>
+	<header style="text-align:center;color:red;">SERVICE WORKER DEMO</header>
+	<div class="list rank-wrap">
+    	<div class="best-week" id="bestWeek">
+    	</div>
+    </div>
+    <script type="text/template" id="bestWeekTpl">
+    	<section class="rank-list">
+			<h3 class="rank-title title-1"></h3>
+			<ul class="rank-sub">
+				<li>排名</li>
+				<li>主播</li>
+				<li>新增粉丝</li>
+			</ul>
+			<%
+				if(data.status && data.status == 200 && data.data) {
+						var lists = data.data.vItem;
+						if(lists.length > 0) {
+				%>
+					<ul class="list-content">
+						<%
+							lists = lists.slice(0,10);
+
+							for(var i=0,len=lists.length;i<len;i++) {
+							 	var item = lists[i];
+							 	var rankClass = '';
+							 	var fansNum = formatNum(item.iNum);
+
+							 	switch(i) {
+							 		case 0: rankClass = 'rank-1';break;
+							 		case 1: rankClass = 'rank-2';break;
+							 		case 2: rankClass = 'rank-3';break;
+							 		default: rankClass = 'rank-normal';
+							 	};
+
+							 	function formatNum(num) {
+							 		return String(num).replace(/\B(?=(\d{3})+$)/g, ',');
+							 	}
+						%>
+						<li data-tid="<%=item.lTid%>" data-sid="<%=item.lSid%>" data-uid="<%=item.lUid%>" data-gameid="<%=item.iGameId%>">
+							<div class="rank <%=rankClass%>">
+								<span><%= i >= 3 ? (i+1) : ''%></span>
+							</div>
+							<div class="anchor-info">
+								<div class="avatar">
+									<img src="<%=item.sLogo%>" onerror="this.onerror=null;this.src='https://hd.huya.com/fansBadge/static/img/default_5dcfb9d.png'">
+									<%if(item.lTid > 0) {%>
+										<i class="icon-live"></i>
+									<%}%>
+								</div>
+								<div class="anchor-detail">
+									<h3 class="word"><%=item.sNickName%></h3>
+									<div class="medal-num">
+						                <i class="bage-9"><%=item.sBadgeName%></i>
+						            </div>
+								</div>	
+							</div>
+							<div class="count"><%=fansNum%></div>
+						</li>
+						<%}%>
+					</ul>
+				<% } else {%>
+					<div class="empty">
+				        <img src="http://hd.huya.com/fansPrivaligeH5Node/img/empty.png" alt="">
+				        <p>暂无人上榜</p>
+				    </div>
+				<%}}%>
+		</section>
+    </script>
+	<script type="text/javascript" src="js/zepto.min.js"></script>
+	<script type="text/javascript" src="js/underscore.min.js"></script>
+	<script type="text/javascript" src="js/app.js?t=6"></script>
+	<script type="text/javascript">
+		if('serviceWorker' in navigator) {
+			window.addEventListener('DOMContentLoaded', function() {
+				navigator.serviceWorker.register('./sw.js', { 
+					scope: './'
+				}).then(function(registration) {
+					console.log('ServiceWorker registration successful with scope: ', registration.scope);
+				}).catch(function(err) {
+					console.log('ServiceWorker registration err: ', err);
+				});
+			});
+		} else {
+			console.log('service worker is not supported');
+		}
+	</script>
+</body>
+</html>
