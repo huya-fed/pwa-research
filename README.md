@@ -5,6 +5,8 @@
 2.可以让应用在离线环境使用;   
 3.让 web 应用能够像原生应用一样被添加到主屏、全屏执行的 Web App Manifest.   
 
+## [线上demo](https://hd.huya.com/pwa-test7/index.html?t=1)
+
 ## 使用步骤
 ### 在html中加上如下脚本，用于检测service worker是否支持，如果支持即注册service worker
 > 注:由于被注册的service worker文件不能被缓存，否则无法更新，但是hd.huya.com对发布的文件默认有24小时缓存，所以跟后台约定了命名为sw.js或者service-worker.js的文件Cache-Control为no-cache.(即只能使用这两种命名)
