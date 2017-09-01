@@ -1,37 +1,18 @@
-/**
-* 每次有任何文件更新，都需要更改缓存的版本号,才能使得更新生效
-*/
-var CACHE_VERSION_NAME = 'test-v' + 1;
-/**
-* 需要缓存的文件。注:
-* 1: 对于同步输出的html，不应该缓存
-* 2: 如果更新的文件是html，也需要加上时间戳或者版本号,如"./index.html?v=1",并且访问的时候也是如此
-* 3: 更新过的文件需要使用md5格式名称或者在文件名后加上时间戳(和引用方式同步,如<link rel="stylesheet" href="css/index.css?t=1">,则这里配置的名称为"css/index.css?t=1")
-*/
+//每次有任何文件更新，都需要更改缓存的版本号
+var CACHE_VERSION_NAME = 'test-1' + 1;
+//缓存的文件，注意更新文件需要使用md5或者时间戳，否则得不到更新(对于同步输出的html，不应该缓存)
 var filesToBeCached = [
 
 ];
 
-/**
-* (该功能可选)
-* 配置通过ajax访问的url，用于缓存接口的数据，这样接口也不用每次去线上请求，注:
-* 1: 只适用于cache:true的接口，并且需要定义好jsonp和jsonpCallback名称的请求，即不能是动态的接口
-* 2: 这里设置了接口缓存的有效期为2分钟，即2分钟后会拉取线上的数据，并且更新到本地
-*/
+//通过ajax访问的url，这里可以缓存这些接口的数据，在离线时候使用
+//并且，只适用于cache:true，定义好jsonp和jsonpCallback名称的请求
 var ajaxUrls = [];
 
-
-
-
-
-
-
-
 /*********************************SW主逻辑(勿动)**********************************/
 /*********************************SW主逻辑(勿动)**********************************/
 /*********************************SW主逻辑(勿动)**********************************/
 
-/*********************************兼容**********************************/
 if (!Cache.prototype.add) {
   Cache.prototype.add = function add(request) {
     return this.addAll([request]);
@@ -131,10 +112,7 @@ self.addEventListener('install', function(event) {
   );
 });
 
-/**
-* 接口数据缓存策略：2分钟
-*/
-var preTime = Date.now(), strategy = 2 * 60 * 1000;
+var preTime = preHtmlTime = Date.now(), strategy = 2 * 60 * 1000;//接口数据缓存策略：2分钟
 
 self.addEventListener('fetch', function(event) {
 	console.log('[ServiceWorker] fetch url' + event.request.url)
@@ -150,9 +128,33 @@ self.addEventListener('fetch', function(event) {
   }
 
   /*
-  * Cache api data.
-  */
-  if (dataUrl) {
+   * Cache html file.
+   */
+  if(url.indexOf('.html') > -1) {
+    var htmlCacheName = url.split('.html')[0].slice(url.length - 10, url.length).replace('/', '');
+    var now = Date.now(), shouldUpdateHtml = false;
+    if((now - preHtmlTime > strategy)) {
+      preHtmlTime = now;
+      shouldUpdateHtml = true;
+      console.log('[ServiceWorker] shoule update html.')
+    }
+
+    event.respondWith(
+      caches.match(event.request).then(function(response) {
+        return (!shouldUpdateHtml && response) || caches.open(htmlCacheName).then(function(cache) {
+            return fetch(event.request).then(function(response){
+              console.log('[ServiceWorker] fetch html file from server.')
+              cache.put(event.request.url, response.clone());
+              return response;
+            });
+        })
+      })
+    );
+  } 
+  /*
+   * Cache api data.
+   */
+  else if (dataUrl) {
     var dataCacheName = dataUrl.slice(dataUrl.length - 20, dataUrl.length) + 'v1';
     var now = Date.now(), shouldUpdate = false;
 
@@ -196,3 +198,22 @@ self.addEventListener('activate', function(e) {
   );
   return self.clients.claim();
 });
+
+self.addEventListener('error', function(e) {
+  console.log('event-error:', e);
+  //删除所有缓存
+  caches.keys().then(function (cacheNames) {
+      return Promise.all(
+          cacheNames.map(function (cacheName) {
+              return caches.delete(cacheName);
+          })
+      );
+  });
+
+  //注销
+  self.registration.unregister();
+});
+
+// self.onerror = function(message) {
+//   console.log('self-onerror', message);
+// };
